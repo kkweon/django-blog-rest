@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import markdown_deux
-from comments.models import Comment
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
@@ -9,14 +8,9 @@ from django.db import models
 from django.db.models.signals import pre_save
 from django.utils import timezone
 from django.utils.safestring import mark_safe
-
 from django.utils.text import slugify
-# Create your models here.
-# MVC MODEL VIEW CONTROLLER
 
-
-#Post.objects.all()
-#Post.objects.create(user=user, title="Some time")
+from comments.models import Comment
 from posts.utils import get_read_time
 
 
@@ -43,7 +37,7 @@ def upload_location(instance, filename):
 class Post(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, default=1)
     title = models.CharField(max_length=120)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, allow_unicode=True)
     image = models.ImageField(upload_to=upload_location, 
             null=True, 
             blank=True, 
@@ -90,7 +84,7 @@ class Post(models.Model):
         return content_type
 
 def create_slug(instance, new_slug=None):
-    slug = slugify(instance.title)
+    slug = slugify(instance.title, allow_unicode=True)
     if new_slug is not None:
         slug = new_slug
     qs = Post.objects.filter(slug=slug).order_by("-id")

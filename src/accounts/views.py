@@ -1,6 +1,7 @@
-from accounts.forms import UserLoginForm, UserRegisterForm
+from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, get_user_model, login, logout
+
+from accounts.forms import UserLoginForm, UserRegisterForm
 
 
 # Create your views here.

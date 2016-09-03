@@ -13,8 +13,7 @@ class UserLoginForm(forms.Form):
         password = self.cleaned_data.get('password')
 
         if username and password:
-            user = authenticate(username=username,
-                                password=password)
+            user = authenticate(username=username, password=password)
             if not user:
                 raise forms.ValidationError("this user does not exists")
 
@@ -42,10 +41,8 @@ class UserRegisterForm(forms.ModelForm):
         ]
 
     def clean_email2(self):
-        print(self.cleaned_data)
         email = self.cleaned_data.get('email')
         email2 = self.cleaned_data.get('email2')
-        print(email, email2)
         if email != email2:
             raise forms.ValidationError("Emails do not match")
 
