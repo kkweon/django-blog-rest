@@ -1,12 +1,14 @@
+from django.db.models import Q
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.generics import ListAPIView, RetrieveAPIView, RetrieveDestroyAPIView, CreateAPIView
 from rest_framework.mixins import UpdateModelMixin, DestroyModelMixin
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 
 from comments.api.serializers import CommentSerializer, CommentDetailSerializer, create_comment_serializer, \
-    CommentUpdateSerializer
+    CommentListSerializer
 from comments.models import Comment
 from posts.api.pagination import PostPagePagination
+from posts.api.permissions import IsOwnerOrReadOnly
 
 
 class CommentCreateAPIView(CreateAPIView):
@@ -25,37 +27,39 @@ class CommentCreateAPIView(CreateAPIView):
             user=self.request.user,
         )
 
-
-class CommentDetailAPIView(RetrieveAPIView):
-    queryset = Comment.objects.all()
-    serializer_class = CommentDetailSerializer
-    lookup_field = 'id'
-
-
-class CommentDeleteAPIView(RetrieveDestroyAPIView):
-    queryset = Comment.objects.all()
-    serializer_class = CommentDetailSerializer
-    lookup_field = 'id'
-
-
 class CommentListAPIView(ListAPIView):
+    # permission_classes = [IsAuthenticated]
     queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
+    serializer_class = CommentListSerializer
     filter_backends = [
         SearchFilter,
         OrderingFilter
     ]
     search_fields = [
-        'content'
+        'content',
+        'user__first_name',
+        'user__username',
     ]
     lookup_field = 'id'
 
     pagination_class = PostPagePagination
 
+    def get_queryset(self, *args, **kwargs):
+        queryset_list = Comment.objects.filter(id__gte=0)
+        query = self.request.GET.get('q')
+        if query:
+            queryset_list = queryset_list.filter(
+                Q(content__icontains=query) |
+                Q(user__first_name__icontains=query) |
+                Q(user__last_name__icontains=query)
+            ).distinct()
+        return queryset_list
 
-class CommentUpdateAPIView(RetrieveAPIView, UpdateModelMixin, DestroyModelMixin):
+
+class CommentDetailAPIView(RetrieveAPIView, UpdateModelMixin, DestroyModelMixin):
     queryset = Comment.objects.filter(id__gte=0)
-    serializer_class = CommentUpdateSerializer
+    serializer_class = CommentDetailSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     lookup_field = 'id'
 
     def put(self, request, *args, **kwargs):
